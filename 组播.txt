@@ -1,0 +1,43 @@
+using System;
+using System.Collections.Generic;
+
+using System.Text;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+
+namespace ×é²¥
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            IPEndPoint local = new IPEndPoint(IPAddress.Parse("192.168.1.105"), 5566);
+            UdpClient client = new UdpClient(local);
+            client.JoinMulticastGroup(IPAddress.Parse("234.5.6.7"));
+            IPEndPoint multicast = new IPEndPoint(IPAddress.Parse("234.5.6.7"), 7788);
+            byte[] buf = Encoding.Default.GetBytes("Hello from multicast");
+            Thread t = new Thread(new ThreadStart(RecvThread));
+            t.IsBackground = true;
+            t.Start();
+            while (true)
+            {
+                client.Send(buf, buf.Length, multicast);
+                Thread.Sleep(1000);
+            }
+        }
+
+        static void RecvThread()
+        {
+            UdpClient client = new UdpClient(7788);
+            client.JoinMulticastGroup(IPAddress.Parse("234.5.6.7"));
+            IPEndPoint multicast = new IPEndPoint(IPAddress.Parse("234.5.6.7"), 5566);
+            while (true)
+            {
+                byte[] buf = client.Receive(ref multicast);
+                string msg = Encoding.Default.GetString(buf);
+                Console.WriteLine(msg);
+            }
+        }
+    }
+}
